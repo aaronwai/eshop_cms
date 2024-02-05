@@ -16,6 +16,7 @@ import {
 } from "@/lib/validators/account-credentials-validator";
 import { trpc } from "@/trpc/client";
 import { toast } from "sonner";
+import { ZodError } from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const Page = () => {
@@ -23,6 +24,14 @@ const Page = () => {
   const router = useRouter();
   const isSeller = searchParams.get("as") === "seller";
   const origin = searchParams.get("origin");
+
+  const continueAsSeller = () => {
+    router.push("?as=seller");
+  };
+
+  const continueAsBuyer = () => {
+    router.replace("/sign-in", undefined);
+  };
 
   const {
     register,
@@ -35,7 +44,6 @@ const Page = () => {
   const { mutate: signIn, isLoading } = trpc.auth.signIn.useMutation({
     onSuccess: async () => {
       toast.success("Signed in successfully");
-      router.refresh();
 
       if (origin) {
         router.push(`/${origin}`);
@@ -46,7 +54,9 @@ const Page = () => {
         router.push("/sell");
         return;
       }
+
       router.push("/");
+      router.refresh();
     },
     onError: (err) => {
       if (err.data?.code === "UNAUTHORIZED") {
@@ -66,7 +76,7 @@ const Page = () => {
           <div className='flex flex-col items-center space-y-2 text-center'>
             <Icons.logo className='h-20 w-20' />
             <h1 className='text-2xl font-semibold tracking-tight'>
-              Sign in to your account
+              Sign in to your {isSeller ? "seller" : ""} account
             </h1>
 
             <Link
@@ -139,6 +149,24 @@ const Page = () => {
                 </span>
               </div>
             </div>
+
+            {isSeller ? (
+              <Button
+                onClick={continueAsBuyer}
+                variant='secondary'
+                disabled={isLoading}
+              >
+                Continue as customer
+              </Button>
+            ) : (
+              <Button
+                onClick={continueAsSeller}
+                variant='secondary'
+                disabled={isLoading}
+              >
+                Continue as seller
+              </Button>
+            )}
           </div>
         </div>
       </div>
